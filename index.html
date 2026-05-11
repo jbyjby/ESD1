@@ -2076,9 +2076,11 @@ function bindLobby() {
 
   const alloc = allocate(total);
 
-  const unsub = onValue(studentsRef, (snap) => {
-    const students = snap.val() || {};
-    renderRoster(students, alloc, total);
+  const unsub = onValue(sessionRef, (snap) => {
+    const session = snap.val() || {};
+    const students = session.students || {};
+    const isRevealed = session.revealed || false;
+    renderRoster(students, alloc, total, isRevealed);
   });
   state.unsubscribers.push(unsub);
 
@@ -2133,7 +2135,7 @@ function bindLobby() {
   });
 }
 
-function renderRoster(students, alloc, total) {
+function renderRoster(students, alloc, total, isRevealed) {
   const roster = document.getElementById('countryRoster');
   if (!roster) return;
 
@@ -2152,7 +2154,10 @@ function renderRoster(students, alloc, total) {
   if (numTotal) numTotal.textContent = total;
   if (progress) progress.style.width = Math.min(100, (joinedCount / total) * 100) + '%';
   if (revealBtn) {
-    if (joinedCount >= total) {
+    if (isRevealed) {
+      revealBtn.disabled = true;
+      revealBtn.textContent = '✅ 공개 완료';
+    } else if (joinedCount >= total) {
       revealBtn.disabled = false;
       revealBtn.textContent = '🎭 역할 공개하기';
     } else {
@@ -2189,7 +2194,14 @@ function renderRoster(students, alloc, total) {
     const allFull = filled.every(x => x.filled);
     const filledCount = filled.filter(x => x.filled).length;
     const chipsHtml = filled.map(x => {
-      if (x.filled) return `<span class="name-chip-sm">${escapeHtml(x.name)}</span>`;
+      if (x.filled) {
+        // 공개 전에는 이름 대신 '?' 또는 'V' 표시
+        if (isRevealed) {
+          return `<span class="name-chip-sm">${escapeHtml(x.name)}</span>`;
+        } else {
+          return `<span class="name-chip-sm" style="background:var(--grass); color:var(--paper); border-color:var(--grass-deep);">입장완료</span>`;
+        }
+      }
       return `<span class="name-chip-sm empty">.</span>`;
     }).join('');
 
