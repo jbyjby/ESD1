@@ -1472,12 +1472,7 @@ input[type=range]::-moz-range-thumb {
   <main id="view"></main>
 </div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import {
-    getDatabase, ref, set, update, onValue, get, remove, push, onDisconnect, serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
+<script>
   // ⚠️ 본인 Firebase 프로젝트 설정값
   const firebaseConfig = {
     apiKey: "AIzaSyAPK56SwaqsNOi4dFONg5_v4nxI13Ddbjk",
@@ -1490,9 +1485,15 @@ input[type=range]::-moz-range-thumb {
     measurementId: "G-NYNLP4F5KY"
   };
 
-  // Firebase 설정 여부 체크
-  const isConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("YOUR_");
-  window.__FIREBASE_CONFIGURED__ = isConfigured;
+  // 설정 여부 즉시 체크 (UI 렌더링용)
+  window.__FIREBASE_CONFIGURED__ = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("YOUR_");
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getDatabase, ref, set, update, onValue, get, remove, push, onDisconnect, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   // 로컬 파일 실행 경고 (학생 접속 불가)
   const isLocalFile = window.location.protocol === 'file:';
@@ -1500,7 +1501,7 @@ input[type=range]::-moz-range-thumb {
     console.warn("⚠️ 현재 로컬 파일(file://)로 실행 중입니다. 이 경우 QR 코드를 통한 학생 접속이 불가능합니다. Netlify나 GitHub Pages 등을 통해 호스팅해주세요.");
   }
 
-  if (isConfigured) {
+  if (window.__FIREBASE_CONFIGURED__) {
     try {
       const app = initializeApp(firebaseConfig);
       const db = getDatabase(app);
