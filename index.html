@@ -2212,7 +2212,10 @@ function renderRoster(students, alloc, total, isRevealed) {
           <span class="flag">
             ${r.iso ? `<img src="https://flagcdn.com/w80/${r.iso}.png" class="flag-img-sm" alt="${r.name}">` : r.flag}
           </span>
-          <span class="name">${r.name}</span>
+          <span class="name">
+            <small style="font-size:10px; color:var(--ink-mute); display:block; line-height:1;">${r.order}번 순서</small>
+            ${r.name}
+          </span>
           <span class="slot">${filledCount}/${cap}</span>
         </div>
         <div class="name-chips-sm">${chipsHtml}</div>
