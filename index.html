@@ -1,0 +1,2200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🌍 지구촌 자원 분배 게임</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+<style>
+:root {
+  --sky-1: #fef9f0;
+  --sky-2: #fff5e1;
+  --grass: #88c97a;
+  --grass-deep: #5fa84a;
+  --grass-soft: #e3f5dc;
+  --sun: #ffd166;
+  --sun-soft: #fff4d4;
+  --coral: #ff8b6a;
+  --coral-soft: #ffe5dc;
+  --sky: #6bb6ff;
+  --sky-bg: #e0f0ff;
+  --plum: #c490d1;
+  --plum-soft: #f3e4f7;
+  --ink: #3d2f1f;
+  --ink-soft: #6b5a47;
+  --ink-mute: #a8987f;
+  --paper: #ffffff;
+  --line: #f0e6d2;
+  --line-soft: #f8f0e0;
+  --r-sm: 14px;
+  --r-md: 20px;
+  --r-lg: 28px;
+  --r-xl: 36px;
+  --shadow: 0 4px 0 rgba(61, 47, 31, 0.08);
+  --shadow-lg: 0 6px 0 rgba(61, 47, 31, 0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 10% 10%, var(--sun-soft) 0%, transparent 30%),
+    radial-gradient(circle at 90% 80%, var(--sky-bg) 0%, transparent 35%),
+    radial-gradient(circle at 50% 50%, var(--grass-soft) 0%, transparent 40%),
+    var(--sky-1);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: 'Gowun Dodum', 'Pretendard', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 5%; left: 8%;
+  width: 80px; height: 80px;
+  background: var(--sun);
+  border-radius: 50%;
+  opacity: 0.4;
+  z-index: 0;
+  animation: float 6s ease-in-out infinite;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  bottom: 8%; right: 6%;
+  width: 60px; height: 60px;
+  background: var(--coral);
+  border-radius: 50%;
+  opacity: 0.25;
+  z-index: 0;
+  animation: float 8s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+.app {
+  flex: 1;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 20px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.brand-mark {
+  width: 48px; height: 48px;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: var(--shadow);
+  transition: transform 0.3s ease;
+}
+
+.brand:hover .brand-mark {
+  transform: rotate(-15deg) scale(1.1);
+}
+
+.brand-name {
+  font-family: 'Jua', sans-serif;
+  font-size: 19px;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+}
+
+.nav {
+  display: flex;
+  gap: 6px;
+  background: var(--paper);
+  padding: 6px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.nav-link {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  font-family: 'Jua', sans-serif;
+}
+
+.nav-link:hover { color: var(--ink); }
+
+.nav-link.active {
+  background: var(--ink);
+  color: #fff;
+}
+
+.view {
+  animation: bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes bounce-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Jua', sans-serif;
+  font-size: 13px;
+  color: var(--coral);
+  background: var(--coral-soft);
+  padding: 6px 16px;
+  border-radius: 999px;
+  margin-bottom: 18px;
+  border: 2px solid var(--coral);
+  box-shadow: var(--shadow);
+}
+
+h1.hero {
+  font-family: 'Jua', sans-serif;
+  font-size: clamp(30px, 6vw, 46px);
+  line-height: 1.25;
+  letter-spacing: -1px;
+  margin-bottom: 16px;
+  color: var(--ink);
+}
+
+.hero .accent {
+  color: var(--grass-deep);
+  position: relative;
+  display: inline-block;
+}
+
+.hero .accent::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0; right: 0;
+  height: 8px;
+  background: var(--sun);
+  z-index: -1;
+  border-radius: 4px;
+  opacity: 0.7;
+}
+
+.lede {
+  font-size: 16px;
+  color: var(--ink-soft);
+  max-width: 560px;
+  line-height: 1.8;
+  margin-bottom: 28px;
+}
+
+h2 {
+  font-family: 'Jua', sans-serif;
+  font-size: 26px;
+  margin-bottom: 12px;
+  color: var(--ink);
+}
+
+h3 {
+  font-family: 'Jua', sans-serif;
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+
+.cta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+  justify-content: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 24px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-family: 'Jua', sans-serif;
+  cursor: pointer;
+  border: 2.5px solid var(--ink);
+  transition: all 0.15s ease;
+  text-decoration: none;
+  box-shadow: var(--shadow);
+}
+
+.btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(61, 47, 31, 0.08);
+}
+
+.btn-primary {
+  background: var(--grass);
+  color: var(--ink);
+}
+
+.btn-primary:hover {
+  background: var(--grass-deep);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 rgba(61, 47, 31, 0.1);
+}
+
+.btn-ghost {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.btn-ghost:hover {
+  background: var(--sun-soft);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 rgba(61, 47, 31, 0.1);
+}
+
+.btn-coral {
+  background: var(--coral);
+  color: #fff;
+}
+
+.btn-coral:hover {
+  background: #ff7050;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 rgba(61, 47, 31, 0.1);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+}
+
+.btn:disabled:hover {
+  transform: none;
+  box-shadow: var(--shadow);
+  background: var(--grass);
+  color: var(--ink);
+}
+
+.btn-arrow::after { content: "→"; font-size: 18px; }
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.feature {
+  background: var(--paper);
+  border: 2.5px solid var(--ink);
+  border-radius: var(--r-md);
+  padding: 22px 20px;
+  position: relative;
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
+}
+
+.feature:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 7px 0 rgba(61, 47, 31, 0.1);
+}
+
+.feature:nth-child(1) { background: var(--sun-soft); }
+.feature:nth-child(2) { background: var(--sky-bg); }
+.feature:nth-child(3) { background: var(--plum-soft); }
+
+.feature-icon {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2.5px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+
+.feature-title {
+  font-family: 'Jua', sans-serif;
+  font-size: 16px;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
+.feature-desc {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.step {
+  display: flex;
+  gap: 16px;
+  background: var(--paper);
+  border: 2.5px solid var(--ink);
+  border-radius: var(--r-md);
+  padding: 20px;
+  align-items: flex-start;
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
+}
+
+.step:hover {
+  transform: translateX(4px);
+  box-shadow: -4px 4px 0 rgba(61, 47, 31, 0.1);
+}
+
+.step:nth-child(1) { background: #fff8e8; }
+.step:nth-child(2) { background: #f3f9ec; }
+.step:nth-child(3) { background: #fff0eb; }
+.step:nth-child(4) { background: #ecf5ff; }
+.step:nth-child(5) { background: #f8f0fc; }
+
+.step-badge {
+  flex-shrink: 0;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Jua', sans-serif;
+  font-size: 20px;
+  border: 3px solid var(--paper);
+  box-shadow: 0 0 0 2.5px var(--ink);
+}
+
+.step-body h4 {
+  font-family: 'Jua', sans-serif;
+  font-size: 16px;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
+.step-body p {
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.callout {
+  background: var(--sun-soft);
+  border: 2.5px dashed var(--coral);
+  padding: 20px 24px;
+  border-radius: var(--r-md);
+  margin-bottom: 28px;
+  position: relative;
+}
+
+.callout::before {
+  content: "💡";
+  position: absolute;
+  top: -16px;
+  left: 20px;
+  background: var(--paper);
+  border: 2.5px solid var(--coral);
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.callout p {
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.8;
+  padding-top: 8px;
+}
+
+.callout strong {
+  font-family: 'Jua', sans-serif;
+  font-weight: 400;
+  color: var(--coral);
+}
+
+.input-card {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: var(--r-xl);
+  padding: 36px 30px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+
+.input-card::before {
+  content: "🌱";
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--paper);
+  width: 48px; height: 48px;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.input-label {
+  display: block;
+  font-family: 'Jua', sans-serif;
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-bottom: 18px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.number-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.num-btn {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 2.5px solid var(--ink);
+  background: var(--sun);
+  font-size: 26px;
+  font-family: 'Jua', sans-serif;
+  cursor: pointer;
+  color: var(--ink);
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow);
+}
+
+.num-btn:hover:not(:disabled) {
+  transform: translateY(-2px) rotate(-5deg);
+  box-shadow: 0 6px 0 rgba(61, 47, 31, 0.1);
+}
+
+.num-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(61, 47, 31, 0.08);
+}
+
+.num-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.num-display {
+  font-family: 'Jua', sans-serif;
+  font-size: 76px;
+  letter-spacing: -3px;
+  font-feature-settings: "tnum";
+  color: var(--ink);
+  min-width: 120px;
+  text-align: center;
+}
+
+.num-display .unit {
+  font-size: 22px;
+  color: var(--ink-mute);
+  margin-left: 4px;
+  letter-spacing: 0;
+}
+
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 6px;
+}
+
+input[type=range] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  background: var(--line);
+  border-radius: 4px;
+  outline: none;
+  border: 2px solid var(--ink);
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--coral);
+  cursor: pointer;
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--shadow);
+}
+
+input[type=range]::-moz-range-thumb {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--coral);
+  cursor: pointer;
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.range-label {
+  font-family: 'Jua', sans-serif;
+  font-size: 14px;
+  color: var(--ink-mute);
+  width: 28px;
+  text-align: center;
+}
+
+.result-hero {
+  text-align: center;
+  margin-bottom: 28px;
+  padding: 24px 0 8px;
+}
+
+.result-tag {
+  display: inline-block;
+  font-family: 'Jua', sans-serif;
+  font-size: 13px;
+  color: var(--grass-deep);
+  background: var(--grass-soft);
+  padding: 6px 16px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+  border: 2px solid var(--grass-deep);
+}
+
+.result-headline {
+  font-family: 'Jua', sans-serif;
+  font-size: clamp(26px, 5vw, 36px);
+  letter-spacing: -1px;
+  margin-bottom: 6px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.result-headline .num {
+  color: var(--coral);
+  background: var(--sun);
+  padding: 0 12px;
+  border-radius: 12px;
+  display: inline-block;
+  transform: rotate(-2deg);
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--shadow);
+  margin: 0 4px;
+}
+
+.result-sub {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 28px 0 14px;
+  padding: 0 4px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.section-head h3 {
+  font-family: 'Jua', sans-serif;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-head .tip {
+  font-size: 12px;
+  color: var(--ink-mute);
+}
+
+.role-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.role-item {
+  display: grid;
+  grid-template-columns: 36px 56px 1fr auto;
+  align-items: center;
+  gap: 16px;
+  background: var(--paper);
+  border: 2.5px solid var(--ink);
+  border-radius: var(--r-md);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
+}
+
+.role-item:hover {
+  transform: translateX(4px);
+  box-shadow: -4px 4px 0 rgba(61, 47, 31, 0.1);
+}
+
+.role-rank {
+  font-family: 'Jua', sans-serif;
+  font-size: 16px;
+  color: var(--ink-mute);
+  font-feature-settings: "tnum";
+  text-align: center;
+}
+
+.role-flag {
+  font-size: 38px;
+  line-height: 1;
+  text-align: center;
+}
+
+.role-meta .name {
+  font-family: 'Jua', sans-serif;
+  font-size: 22px;
+  margin-bottom: 4px;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+}
+
+.role-meta .desc {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.role-meta .pct-inline {
+  font-family: 'Jua', sans-serif;
+  font-size: 12px;
+  color: var(--grass-deep);
+  background: var(--grass-soft);
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1.5px solid var(--grass-deep);
+  font-feature-settings: "tnum";
+}
+
+.role-meta .pct-inline.zero {
+  color: var(--coral);
+  background: var(--coral-soft);
+  border-color: var(--coral);
+}
+
+.role-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.count-badge {
+  font-family: 'Jua', sans-serif;
+  font-size: 28px;
+  color: #fff;
+  background: var(--ink);
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.5px;
+  border: 2.5px solid var(--ink);
+  min-width: 72px;
+  text-align: center;
+}
+
+.count-badge .unit {
+  font-size: 16px;
+  margin-left: 2px;
+  opacity: 0.75;
+}
+
+.action-bar {
+  display: flex;
+  gap: 10px;
+  margin-top: 36px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.print-friendly {
+  font-size: 12px;
+  color: var(--ink-mute);
+  text-align: center;
+  margin-top: 20px;
+  font-style: italic;
+}
+
+/* ========== 로비/QR/학생 화면 추가 스타일 ========== */
+
+.lobby-wrap {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.qr-card {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: var(--r-xl);
+  padding: 26px 24px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  position: relative;
+}
+
+.qr-card::before {
+  content: "📱";
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--paper);
+  width: 48px; height: 48px;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.qr-title {
+  font-family: 'Jua', sans-serif;
+  font-size: 18px;
+  margin: 8px 0 4px;
+}
+
+.qr-sub {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+}
+
+.qr-box {
+  display: inline-block;
+  padding: 14px;
+  background: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow);
+}
+
+.qr-box img, .qr-box canvas {
+  display: block;
+  width: 200px;
+  height: 200px;
+}
+
+.session-code {
+  margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--sun-soft);
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  padding: 10px 20px;
+  box-shadow: var(--shadow);
+}
+
+.session-code .lbl {
+  font-family: 'Jua', sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.session-code .code {
+  font-family: 'Jua', sans-serif;
+  font-size: 24px;
+  letter-spacing: 4px;
+  color: var(--coral);
+  font-feature-settings: "tnum";
+}
+
+.join-link {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--ink-mute);
+  word-break: break-all;
+  font-family: 'Gowun Dodum', monospace;
+  background: var(--line-soft);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1.5px dashed var(--ink-mute);
+}
+
+.counter-strip {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: var(--r-xl);
+  padding: 22px 26px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.counter-strip .lbl {
+  font-family: 'Jua', sans-serif;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.counter-strip .val {
+  font-family: 'Jua', sans-serif;
+  font-size: 44px;
+  letter-spacing: -2px;
+  color: var(--ink);
+  font-feature-settings: "tnum";
+  line-height: 1;
+}
+
+.counter-strip .val .slash {
+  color: var(--ink-mute);
+  margin: 0 6px;
+}
+
+.counter-strip .val .now {
+  color: var(--coral);
+}
+
+.counter-strip .progress {
+  width: 100%;
+  height: 12px;
+  background: var(--line);
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.counter-strip .progress > div {
+  height: 100%;
+  background: var(--grass);
+  transition: width 0.4s ease;
+}
+
+.country-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.country-row {
+  background: var(--paper);
+  border: 2.5px solid var(--ink);
+  border-radius: var(--r-md);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+
+.country-row.full {
+  background: var(--grass-soft);
+  border-color: var(--grass-deep);
+}
+
+.country-row-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.country-row-head .flag { font-size: 28px; line-height: 1; }
+.country-row-head .name {
+  font-family: 'Jua', sans-serif;
+  font-size: 18px;
+  flex: 1;
+}
+.country-row-head .slot {
+  font-family: 'Jua', sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+  background: var(--line-soft);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-feature-settings: "tnum";
+}
+.country-row.full .slot {
+  background: var(--grass);
+  color: var(--ink);
+}
+
+.name-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.name-chip {
+  font-family: 'Jua', sans-serif;
+  font-size: 13px;
+  padding: 6px 12px;
+  background: var(--sun-soft);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  color: var(--ink);
+  animation: chip-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.name-chip.empty {
+  background: transparent;
+  color: var(--ink-mute);
+  border-style: dashed;
+  opacity: 0.6;
+}
+
+@keyframes chip-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ========== 학생용(join) 화면 ========== */
+
+.join-card {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: var(--r-xl);
+  padding: 32px 26px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+
+.join-card::before {
+  content: "🎫";
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--paper);
+  width: 48px; height: 48px;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.text-input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2.5px solid var(--ink);
+  border-radius: var(--r-md);
+  font-family: 'Gowun Dodum', sans-serif;
+  font-size: 18px;
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+  text-align: center;
+  box-shadow: var(--shadow);
+  transition: all 0.15s ease;
+}
+
+.text-input:focus {
+  border-color: var(--coral);
+  box-shadow: 0 4px 0 var(--coral-soft);
+}
+
+.waiting-card {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: var(--r-xl);
+  padding: 32px 24px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.waiting-card .pulse {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--grass-deep);
+  margin-right: 8px;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.6); opacity: 0.4; }
+}
+
+.my-name-tag {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: 'Jua', sans-serif;
+  font-size: 22px;
+  background: var(--sun-soft);
+  border: 2.5px solid var(--ink);
+  padding: 8px 22px;
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+
+.role-reveal-card {
+  background: linear-gradient(135deg, var(--sun-soft), var(--coral-soft));
+  border: 3px solid var(--ink);
+  border-radius: var(--r-xl);
+  padding: 36px 24px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  margin-bottom: 20px;
+  animation: reveal-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes reveal-pop {
+  0%   { opacity: 0; transform: scale(0.7) rotate(-3deg); }
+  60%  { transform: scale(1.05) rotate(1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+.role-reveal-flag {
+  font-size: 96px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.role-reveal-name {
+  font-family: 'Jua', sans-serif;
+  font-size: 38px;
+  letter-spacing: -1px;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.role-reveal-tag {
+  display: inline-block;
+  font-family: 'Jua', sans-serif;
+  font-size: 13px;
+  color: var(--grass-deep);
+  background: var(--paper);
+  border: 2px solid var(--grass-deep);
+  padding: 4px 14px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.role-reveal-desc {
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+  margin-top: 4px;
+}
+
+.role-reveal-pct {
+  display: inline-block;
+  margin-top: 12px;
+  font-family: 'Jua', sans-serif;
+  font-size: 13px;
+  color: var(--coral);
+  background: var(--paper);
+  border: 2px solid var(--coral);
+  padding: 4px 14px;
+  border-radius: 999px;
+}
+
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-family: 'Jua', sans-serif;
+  font-size: 14px;
+  z-index: 999;
+  box-shadow: 0 4px 12px rgba(61,47,31,0.25);
+  animation: toast-in 0.3s ease;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, -20px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.config-warning {
+  background: #fff3e0;
+  border: 2.5px dashed var(--coral);
+  border-radius: var(--r-md);
+  padding: 20px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.7;
+}
+
+.config-warning code {
+  background: var(--paper);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 13px;
+  border: 1px solid var(--line);
+}
+
+@media (max-width: 600px) {
+  .app { padding: 16px 14px 60px; }
+  .topbar { flex-direction: column; align-items: stretch; }
+  .nav { width: 100%; justify-content: space-around; }
+  .nav-link { flex: 1; padding: 8px 10px; font-size: 13px; }
+  .input-card { padding: 32px 18px; }
+  .num-display { font-size: 56px; min-width: 90px; }
+  .num-btn { width: 46px; height: 46px; font-size: 22px; }
+  .role-item {
+    grid-template-columns: 32px 44px 1fr auto;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .role-flag { font-size: 30px; }
+  .role-meta .name { font-size: 18px; }
+  .count-badge { font-size: 22px; padding: 6px 14px; min-width: 60px; }
+  .count-badge .unit { font-size: 13px; }
+  .qr-box img, .qr-box canvas { width: 180px; height: 180px; }
+  .counter-strip .val { font-size: 36px; }
+  .role-reveal-flag { font-size: 76px; }
+  .role-reveal-name { font-size: 30px; }
+}
+
+@media print {
+  body::before, body::after { display: none; }
+  .topbar, .action-bar, .nav { display: none !important; }
+  .app { padding: 0; max-width: 100%; }
+  .role-item { break-inside: avoid; box-shadow: none; }
+  body { background: #fff; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand" onclick="navigate('home')">
+      <div class="brand-mark">🌍</div>
+      <div class="brand-name">지구촌 자원 분배 게임</div>
+    </div>
+    <nav class="nav">
+      <button class="nav-link" data-route="home" onclick="navigate('home')">소개</button>
+      <button class="nav-link" data-route="how" onclick="navigate('how')">진행방법</button>
+      <button class="nav-link" data-route="play" onclick="navigate('play')">게임시작</button>
+    </nav>
+  </header>
+
+  <main id="view"></main>
+</div>
+
+<!-- Firebase v10 (modular, CDN) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getDatabase, ref, set, update, onValue, get, remove, push, onDisconnect, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // ⚠️ 여기를 본인 Firebase 프로젝트 설정값으로 교체하세요
+  // Firebase Console > 프로젝트 설정 > 일반 > 내 앱 > SDK 설정 및 구성
+  const firebaseConfig = {
+  apiKey: "AIzaSyAPK56SwaqsNOi4dFONg5_v4nxI13Ddbjk",
+  authDomain: "esd1-ede22.firebaseapp.com",
+  databaseURL: "https://esd1-ede22-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "esd1-ede22",
+  storageBucket: "esd1-ede22.firebasestorage.app",
+  messagingSenderId: "219984118374",
+  appId: "1:219984118374:web:6c45c8421c2dbd02a3e3a7",
+  measurementId: "G-NYNLP4F5KY"
+  };
+
+  // Firebase 설정 여부 체크
+  const isConfigured = !firebaseConfig.apiKey.startsWith("YOUR_");
+  window.__FIREBASE_CONFIGURED__ = isConfigured;
+
+  if (isConfigured) {
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    window.__FB__ = { db, ref, set, update, onValue, get, remove, push, onDisconnect, serverTimestamp };
+  }
+  // 로드 완료 알림
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<script>
+const COUNTRIES = [
+  { order:1,  flag:"🇨🇳", name:"중국인",   weight:18,  pct:33,  desc:"총배출 1위, 1인당 8t" },
+  { order:2,  flag:"🇺🇸", name:"미국인",   weight:13,  pct:13,  desc:"총배출 2위, 1인당 14t (높음)" },
+  { order:3,  flag:"🇮🇳", name:"인도인",   weight:5,   pct:8,   desc:"총배출 3위, 1인당 2t (낮음)" },
+  { order:4,  flag:"🇷🇺", name:"러시아인", weight:6,   pct:5,   desc:"1인당 13t (매우 높음)" },
+  { order:5,  flag:"🇯🇵", name:"일본인",   weight:3,   pct:3,   desc:"1인당 8t" },
+  { order:6,  flag:"🇩🇪", name:"독일인",   weight:2,   pct:1.6, desc:"유럽 최대 배출국" },
+  { order:7,  flag:"🇰🇷", name:"한국인",   weight:3,   pct:1.5, desc:"1인당 11t (높음)" },
+  { order:8,  flag:"🇦🇺", name:"호주인",   weight:3,   pct:1,   desc:"1인당 15t (세계 최상위, 축산업↑)" },
+  { order:9,  flag:"🇬🇧", name:"영국인",   weight:1.5, pct:1,   desc:"1인당 5t" },
+  { order:10, flag:"🇧🇷", name:"브라질인", weight:1,   pct:1,   desc:"1인당 2t, 산림 벌채" },
+];
+const AFRICA = { order:11, flag:"🌍", name:"아프리카인", weight:8, pct:0, desc:"콩고·탄자니아·에티오피아 등 · 1인당 0.1t · 배출 거의 없음" };
+const ALL_ROLES = [...COUNTRIES, AFRICA];
+
+let state = {
+  count: 23,
+  sessionCode: null,    // 6자리
+  myName: null,         // 학생 본인 이름
+  myStudentId: null,    // 학생 본인 푸시 ID
+  unsubscribers: []     // Firebase 리스너 정리용
+};
+
+// ========== 라우팅 ==========
+function navigate(route, params = {}) {
+  let hash = route;
+  const q = new URLSearchParams();
+  if (params.code) q.set('code', params.code);
+  if ([...q].length) hash += '?' + q.toString();
+  window.location.hash = hash;
+}
+
+function getRoute() {
+  const raw = window.location.hash.replace('#','');
+  const [path, qs] = raw.split('?');
+  const params = new URLSearchParams(qs || '');
+  const valid = ['home','how','play','result','lobby','join','wait','reveal'];
+  return {
+    name: valid.includes(path) ? path : 'home',
+    code: params.get('code')
+  };
+}
+
+window.addEventListener('hashchange', render);
+
+let __initialized = false;
+function initialRoute() {
+  if (__initialized) return;
+  __initialized = true;
+  if (!window.location.hash) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeFromUrl = urlParams.get('code');
+    if (codeFromUrl) {
+      navigate('join', { code: codeFromUrl });
+    } else {
+      navigate('home');
+    }
+  } else {
+    render();
+  }
+}
+
+window.addEventListener('firebase-ready', initialRoute);
+// firebase-ready가 이미 디스패치된 후에 이 스크립트가 실행됐을 수도 있으므로 보강
+setTimeout(() => {
+  if (!__initialized) initialRoute();
+}, 200);
+
+function render() {
+  // 기존 리스너 정리
+  cleanupListeners();
+
+  const { name: route, code } = getRoute();
+  document.querySelectorAll('.nav-link').forEach(b => {
+    const isActive = b.dataset.route === route ||
+      (['result','lobby'].includes(route) && b.dataset.route === 'play');
+    b.classList.toggle('active', isActive);
+  });
+  const view = document.getElementById('view');
+  view.innerHTML = '';
+  const v = document.createElement('div');
+  v.className = 'view';
+
+  if (route === 'home') v.innerHTML = renderHome();
+  else if (route === 'how') v.innerHTML = renderHow();
+  else if (route === 'play') v.innerHTML = renderPlay();
+  else if (route === 'result') v.innerHTML = renderResult();
+  else if (route === 'lobby') v.innerHTML = renderLobby();
+  else if (route === 'join') v.innerHTML = renderJoin(code);
+  else if (route === 'wait') v.innerHTML = renderWait();
+  else if (route === 'reveal') v.innerHTML = renderReveal();
+
+  view.appendChild(v);
+
+  // 라우트별 바인딩
+  if (route === 'play') bindPlay();
+  else if (route === 'result') bindResult();
+  else if (route === 'lobby') bindLobby();
+  else if (route === 'join') bindJoin(code);
+  else if (route === 'wait') bindWait();
+  else if (route === 'reveal') bindReveal();
+
+  window.scrollTo(0, 0);
+}
+
+function cleanupListeners() {
+  state.unsubscribers.forEach(u => { try { u(); } catch(e){} });
+  state.unsubscribers = [];
+}
+
+function showToast(msg, ms=2000) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), ms);
+}
+
+// ========== 홈/진행방법 (기존 그대로) ==========
+function renderHome() {
+  return `
+    <span class="eyebrow">🌱 환경교육 · 기후정의</span>
+    <h1 class="hero">한정된 지구 자원,<br/><span class="accent">모두에게 공평할까?</span> 🤔</h1>
+    <p class="lede">
+      바구니 하나가 지구 1년 자원이라면,<br/>
+      누가 먼저 얼마나 가져갈까요?<br/>
+      탄소배출량 비율대로 자원을 나눠보며<br/>
+      기후정의를 몸으로 체험하는 환경 수업 게임이에요.
+    </p>
+    <div class="cta-row">
+      <button class="btn btn-primary btn-arrow" onclick="navigate('play')">게임 시작하기</button>
+      <button class="btn btn-ghost" onclick="navigate('how')">진행 방법 보기</button>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">진짜 데이터</div>
+        <div class="feature-desc">2023년 IEA·EDGAR 통계로 국가별 탄소 배출 비율 그대로 반영!</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📱</div>
+        <div class="feature-title">QR 입장</div>
+        <div class="feature-desc">학생들이 QR 코드로 들어와 이름을 적고, 모두 모이면 역할이 짠~</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">💚</div>
+        <div class="feature-title">기후정의 체험</div>
+        <div class="feature-desc">탄소를 적게 배출한 나라가 자원을 못 받는 현실을 직접 느껴봐요</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderHow() {
+  return `
+    <span class="eyebrow">📖 게임 진행 방법</span>
+    <h1 class="hero">자원 분배,<br/><span class="accent">이렇게 진행해요!</span></h1>
+    <p class="lede">
+      바구니에 담긴 사탕이나 젤리를 1년치 지구 자원으로 가정해요.<br/>
+      참가자는 QR로 입장 후 이름을 적고, 추첨된 역할대로 자원을 가져갑니다.
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-badge">1</div>
+        <div class="step-body">
+          <h4>🧺 준비물</h4>
+          <p>바구니 2개(1·2라운드용), 자원 역할용 사탕·젤리 등 100개 내외, 학생용 스마트기기</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-badge">2</div>
+        <div class="step-body">
+          <h4>📱 QR로 입장</h4>
+          <p>선생님 화면의 QR을 스캔하고 이름을 입력해 입장해요. 모든 학생이 들어오면 '역할 확인' 버튼이 활성화됩니다.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-badge">3</div>
+        <div class="step-body">
+          <h4>🍬 자원 가져가기 (1라운드)</h4>
+          <p>탄소배출 비율 순서대로 한 명씩 나와서 자원을 가져갑니다. "내가 미국인·중국인이라면?" 한마디면 한 움큼씩 가져가요!</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-badge">4</div>
+        <div class="step-body">
+          <h4>💬 토론</h4>
+          <p>1라운드를 마치고 함께 이야기해봐요. 누가 자원을 많이 가져갔고, 누구는 적게 받았나요? 누가 책임지고, 누가 피해를 보게 될까요?</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-badge">5</div>
+        <div class="step-body">
+          <h4>🌱 2라운드</h4>
+          <p>두 번째 바구니로 다시 진행해요. 어떻게 하면 공평하고 지속가능하게 나눌 수 있을지 직접 실천해봅니다.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p>
+        <strong>핵심 메시지</strong> — 탄소를 많이 배출한 나라는 기후변화 피해가 적고,
+        탄소를 거의 배출하지 않은 나라가 오히려 가장 큰 피해를 받아요. 이것이 바로 <strong>기후정의 문제</strong>랍니다!
+      </p>
+    </div>
+
+    <div class="cta-row">
+      <button class="btn btn-primary btn-arrow" onclick="navigate('play')">게임 시작하기</button>
+    </div>
+  `;
+}
+
+// ========== 인원 입력 화면 ==========
+function renderPlay() {
+  return `
+    <span class="eyebrow">🎯 학급 인원 입력</span>
+    <h1 class="hero">몇 명이 함께<br/><span class="accent">참가하나요?</span></h1>
+    <p class="lede">학급 인원을 입력하면 탄소배출 비율에 맞춰 역할과 인원이 짠~ 자동 배정돼요!</p>
+
+    <div class="input-card">
+      <span class="input-label">참가 인원 수</span>
+      <div class="number-control">
+        <button class="num-btn" id="dec" aria-label="감소">−</button>
+        <div class="num-display"><span id="numText">23</span><span class="unit">명</span></div>
+        <button class="num-btn" id="inc" aria-label="증가">+</button>
+      </div>
+      <div class="range-row">
+        <span class="range-label">10</span>
+        <input type="range" min="10" max="30" step="1" value="23" id="rangeInput" />
+        <span class="range-label">30</span>
+      </div>
+    </div>
+
+    <div class="cta-row">
+      <button class="btn btn-primary btn-arrow" id="goResult">역할 배정 결과 보기</button>
+      <button class="btn btn-ghost" onclick="navigate('how')">진행 방법 다시 보기</button>
+    </div>
+  `;
+}
+
+function bindPlay() {
+  const range = document.getElementById('rangeInput');
+  const numText = document.getElementById('numText');
+  const inc = document.getElementById('inc');
+  const dec = document.getElementById('dec');
+  const goBtn = document.getElementById('goResult');
+
+  function update(v) {
+    v = Math.max(10, Math.min(30, parseInt(v)));
+    state.count = v;
+    range.value = v;
+    numText.textContent = v;
+    dec.disabled = v <= 10;
+    inc.disabled = v >= 30;
+  }
+  update(state.count);
+
+  range.addEventListener('input', e => update(e.target.value));
+  inc.addEventListener('click', () => update(state.count + 1));
+  dec.addEventListener('click', () => update(state.count - 1));
+  goBtn.addEventListener('click', () => navigate('result'));
+}
+
+// ========== 역할 배정 알고리즘 ==========
+function allocate(total) {
+  const allRoles = [...COUNTRIES, AFRICA];
+  const totalWeight = allRoles.reduce((s, r) => s + r.weight, 0);
+
+  let raws = allRoles.map(r => ({
+    ...r,
+    raw: (r.weight / totalWeight) * total
+  }));
+  let floors = raws.map(r => ({ ...r, count: Math.max(1, Math.floor(r.raw)) }));
+  let assigned = floors.reduce((s, r) => s + r.count, 0);
+  let diff = total - assigned;
+
+  if (diff > 0) {
+    let fracs = floors.map((r, i) => ({
+      i, frac: raws[i].raw - Math.floor(raws[i].raw)
+    })).sort((a, b) => b.frac - a.frac);
+    for (let k = 0; k < diff; k++) {
+      floors[fracs[k % fracs.length].i].count++;
+    }
+  } else if (diff < 0) {
+    let toRemove = -diff;
+    while (toRemove > 0) {
+      let candidates = floors
+        .map((r, i) => ({ i, count: r.count, weight: r.weight }))
+        .filter(x => x.count > 1)
+        .sort((a, b) => b.count - a.count || a.weight - b.weight);
+      if (candidates.length === 0) break;
+      floors[candidates[0].i].count--;
+      toRemove--;
+    }
+  }
+  return floors;
+}
+
+// ========== 역할 배정 결과 화면 ==========
+function renderResult() {
+  const total = state.count;
+  const alloc = allocate(total);
+  const countries = alloc.filter(r => r.order <= 10);
+  const africa = alloc.filter(r => r.order === 11);
+
+  const countryHtml = countries.map(r => `
+    <div class="role-item">
+      <div class="role-rank">${String(r.order).padStart(2,'0')}</div>
+      <div class="role-flag">${r.flag}</div>
+      <div class="role-meta">
+        <div class="name">${r.name}</div>
+        <div class="desc">
+          <span>${r.desc}</span>
+          <span class="pct-inline">탄소 ${r.pct}%</span>
+        </div>
+      </div>
+      <div class="role-stats">
+        <span class="count-badge">${r.count}<span class="unit">명</span></span>
+      </div>
+    </div>
+  `).join('');
+
+  const africaHtml = africa.map(r => `
+    <div class="role-item">
+      <div class="role-rank">${String(r.order).padStart(2,'0')}</div>
+      <div class="role-flag">${r.flag}</div>
+      <div class="role-meta">
+        <div class="name">${r.name}</div>
+        <div class="desc">
+          <span>${r.desc}</span>
+        </div>
+      </div>
+      <div class="role-stats">
+        <span class="count-badge">${r.count}<span class="unit">명</span></span>
+      </div>
+    </div>
+  `).join('');
+
+  const fbWarn = !window.__FIREBASE_CONFIGURED__ ? `
+    <div class="config-warning">
+      <strong>⚠️ Firebase 설정 필요</strong><br/>
+      이 페이지를 학생들과 함께 사용하려면, HTML 파일 상단의 <code>firebaseConfig</code>를
+      본인 Firebase 프로젝트 값으로 교체해야 합니다. (자세한 안내는 README 참고)<br/>
+      설정 전에는 인쇄/배정 결과 확인만 가능해요.
+    </div>
+  ` : '';
+
+  return `
+    ${fbWarn}
+    <div class="result-hero">
+      <span class="result-tag">✨ 짠! 역할 배정 완료</span>
+      <div class="result-headline">총 <span class="num">${total}</span>명의<br/>지구촌 시민 🌏</div>
+      <div class="result-sub">탄소 배출 비율대로 자원을 가져가요</div>
+    </div>
+
+    <div class="section-head">
+      <h3>🍬 자원 가져가는 순서</h3>
+      <span class="tip">탄소 배출 비율 기준</span>
+    </div>
+    <div class="role-grid">${countryHtml}${africaHtml}</div>
+
+    <div class="action-bar">
+      <button class="btn btn-primary btn-arrow" id="startSession" ${!window.__FIREBASE_CONFIGURED__ ? 'disabled' : ''}>
+        📱 QR 세션 시작
+      </button>
+      <button class="btn btn-ghost" onclick="navigate('play')">인원 다시 설정</button>
+      <button class="btn btn-ghost" onclick="window.print()">🖨️ 결과 인쇄</button>
+      <button class="btn btn-ghost" onclick="navigate('home')">🏠 처음으로</button>
+    </div>
+
+    <div class="print-friendly">출처: 2023 IEA · EDGAR · Global Carbon Project</div>
+  `;
+}
+
+function bindResult() {
+  const startBtn = document.getElementById('startSession');
+  if (startBtn) {
+    startBtn.addEventListener('click', startSession);
+  }
+}
+
+// ========== 세션 시작 (선생님이 QR 세션 만들기) ==========
+async function startSession() {
+  if (!window.__FIREBASE_CONFIGURED__) {
+    showToast('Firebase 설정이 필요합니다');
+    return;
+  }
+  const { db, ref, set } = window.__FB__;
+  // 6자리 코드 생성
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const total = state.count;
+  const alloc = allocate(total);
+
+  // DB에 세션 기록
+  await set(ref(db, `sessions/${code}`), {
+    createdAt: Date.now(),
+    total,
+    capacityByOrder: alloc.reduce((acc, r) => {
+      acc[r.order] = r.count;
+      return acc;
+    }, {}),
+    status: 'open',         // open | full | revealed
+    revealed: false
+  });
+
+  state.sessionCode = code;
+  navigate('lobby');
+}
+
+// ========== 선생님 로비 화면 (QR + 카운트 + 학생 라벨링) ==========
+function renderLobby() {
+  if (!state.sessionCode) {
+    return `
+      <div class="config-warning">
+        세션이 없습니다. 먼저 인원을 설정하고 'QR 세션 시작'을 눌러주세요.
+      </div>
+      <div class="cta-row">
+        <button class="btn btn-primary" onclick="navigate('play')">인원 설정으로</button>
+      </div>
+    `;
+  }
+  const code = state.sessionCode;
+  const total = state.count;
+  const joinUrl = buildJoinUrl(code);
+
+  return `
+    <span class="eyebrow">📡 학생 입장 대기실</span>
+    <h1 class="hero">QR을 스캔해<br/><span class="accent">함께 입장해요</span> ✨</h1>
+    <p class="lede">학생들이 QR을 스캔하고 이름을 입력해 들어오면, 아래 카운트가 올라가고 모두 모이면 '역할 공개' 버튼이 활성화돼요!</p>
+
+    <div class="lobby-wrap">
+      <div class="qr-card">
+        <div class="qr-title">학생용 QR 코드</div>
+        <div class="qr-sub">스마트기기 카메라로 스캔하세요</div>
+        <div class="qr-box" id="qrBox"></div>
+        <div class="session-code">
+          <span class="lbl">세션 코드</span>
+          <span class="code">${code}</span>
+        </div>
+        <div class="join-link">${joinUrl}</div>
+      </div>
+
+      <div class="counter-strip">
+        <div>
+          <div class="lbl">입장 현황</div>
+          <div class="val"><span class="now" id="joinedNow">0</span><span class="slash">/</span><span id="joinedTotal">${total}</span></div>
+        </div>
+        <div style="flex:1; min-width:200px;">
+          <div class="progress"><div id="progressBar" style="width:0%;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h3>🌍 국가별 입장 학생</h3>
+      <span class="tip">실시간 업데이트</span>
+    </div>
+    <div class="country-roster" id="countryRoster">
+      <div style="text-align:center; color: var(--ink-mute); padding: 20px;">불러오는 중...</div>
+    </div>
+
+    <div class="action-bar">
+      <button class="btn btn-primary btn-arrow" id="revealBtn" disabled>
+        🎭 모두 모이면 '역할 공개'
+      </button>
+      <button class="btn btn-ghost" id="endSessionBtn">세션 종료</button>
+    </div>
+  `;
+}
+
+function buildJoinUrl(code) {
+  // 현재 페이지 URL을 기준으로 join URL 생성
+  // 학생이 같은 HTML을 열고 #join?code=XXXXXX 로 들어오게 함
+  const base = window.location.href.split('#')[0].split('?')[0];
+  return `${base}#join?code=${code}`;
+}
+
+function bindLobby() {
+  if (!state.sessionCode || !window.__FIREBASE_CONFIGURED__) return;
+  const code = state.sessionCode;
+  const total = state.count;
+  const { db, ref, onValue, update, set } = window.__FB__;
+
+  // QR 코드 생성
+  const qrBox = document.getElementById('qrBox');
+  qrBox.innerHTML = '';
+  new QRCode(qrBox, {
+    text: buildJoinUrl(code),
+    width: 200,
+    height: 200,
+    colorDark: "#3d2f1f",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  // 세션 메타 + 학생 목록 실시간 구독
+  const sessionRef = ref(db, `sessions/${code}`);
+  const studentsRef = ref(db, `sessions/${code}/students`);
+
+  // 정적 배정 (allocate)으로 capacity 계산
+  const alloc = allocate(total);
+  const capacityByOrder = {};
+  alloc.forEach(r => { capacityByOrder[r.order] = r.count; });
+
+  const unsub = onValue(studentsRef, (snap) => {
+    const students = snap.val() || {};
+    renderRoster(students, alloc, total);
+  });
+  state.unsubscribers.push(unsub);
+
+  // 역할 공개 버튼
+  const revealBtn = document.getElementById('revealBtn');
+  revealBtn.addEventListener('click', async () => {
+    // 학생 데이터 가져와서 셔플 후 배정
+    const { get } = window.__FB__;
+    const snap = await get(studentsRef);
+    const students = snap.val() || {};
+    const studentIds = Object.keys(students);
+    if (studentIds.length < total) {
+      showToast(`아직 ${total - studentIds.length}명이 더 들어와야 해요`);
+      return;
+    }
+
+    // 입장 순서대로 정렬
+    const ordered = studentIds
+      .map(id => ({ id, ...students[id] }))
+      .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0))
+      .slice(0, total);  // 혹시 초과 입장 시 앞 N명만
+
+    // 역할 풀(role pool) 만들기 — capacity대로 펼치고 셔플
+    const pool = [];
+    alloc.forEach(r => {
+      for (let k = 0; k < r.count; k++) {
+        pool.push({ order: r.order, flag: r.flag, name: r.name, desc: r.desc, pct: r.pct });
+      }
+    });
+    shuffleInPlace(pool);
+
+    // 학생별 배정 결과
+    const updates = {};
+    ordered.forEach((s, i) => {
+      const role = pool[i];
+      updates[`sessions/${code}/students/${s.id}/role`] = role;
+    });
+    updates[`sessions/${code}/revealed`] = true;
+    updates[`sessions/${code}/revealedAt`] = Date.now();
+    updates[`sessions/${code}/status`] = 'revealed';
+
+    await update(ref(db), updates);
+    showToast('🎭 역할이 공개되었어요!');
+  });
+
+  // 세션 종료
+  document.getElementById('endSessionBtn').addEventListener('click', async () => {
+    if (!confirm('세션을 종료할까요? 학생들도 모두 처음 화면으로 돌아갑니다.')) return;
+    await set(sessionRef, null);
+    state.sessionCode = null;
+    navigate('result');
+  });
+}
+
+function shuffleInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function renderRoster(students, alloc, total) {
+  const roster = document.getElementById('countryRoster');
+  if (!roster) return;
+
+  // 입장 순서대로 정렬한 학생 배열
+  const ordered = Object.entries(students)
+    .map(([id, s]) => ({ id, ...s }))
+    .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+
+  const joinedCount = ordered.length;
+  const numNow = document.getElementById('joinedNow');
+  const numTotal = document.getElementById('joinedTotal');
+  const progress = document.getElementById('progressBar');
+  const revealBtn = document.getElementById('revealBtn');
+
+  if (numNow) numNow.textContent = joinedCount;
+  if (numTotal) numTotal.textContent = total;
+  if (progress) progress.style.width = Math.min(100, (joinedCount / total) * 100) + '%';
+  if (revealBtn) {
+    if (joinedCount >= total) {
+      revealBtn.disabled = false;
+      revealBtn.textContent = '🎭 역할 공개하기';
+    } else {
+      revealBtn.disabled = true;
+      revealBtn.textContent = `🎭 ${total - joinedCount}명 더 기다리는 중...`;
+    }
+  }
+
+  // 국가별로 학생 이름 채우기 (입장 순서로 슬롯에 채움)
+  // 단, 역할이 공개되기 전에는 어느 학생이 어느 국가인지 정해지지 않으므로
+  // "입장 순서 슬롯"으로만 보여주기 — 즉, 첫 번째 입장자는 상위 인기 국가의 첫 슬롯에...
+  // 사용자 요청: "국가별로 참여자들의 이름이 라벨링" → 입장 순서대로 위에서부터 빈 슬롯을 채우는 방식으로 시각화
+  // (실제 역할은 공개 시점에 셔플로 결정. 라벨링은 시각적 진행 표현용)
+
+  let cursor = 0;
+  const html = alloc.map(r => {
+    const cap = r.count;
+    const filled = [];
+    for (let i = 0; i < cap; i++) {
+      if (cursor < ordered.length) {
+        filled.push({ name: ordered[cursor].name, filled: true });
+        cursor++;
+      } else {
+        filled.push({ name: null, filled: false });
+      }
+    }
+    const allFull = filled.every(x => x.filled);
+    const filledCount = filled.filter(x => x.filled).length;
+    const chipsHtml = filled.map(x => {
+      if (x.filled) return `<span class="name-chip">${escapeHtml(x.name)}</span>`;
+      return `<span class="name-chip empty">빈 자리</span>`;
+    }).join('');
+
+    return `
+      <div class="country-row ${allFull ? 'full' : ''}">
+        <div class="country-row-head">
+          <span class="flag">${r.flag}</span>
+          <span class="name">${r.name}</span>
+          <span class="slot">${filledCount}/${cap}</span>
+        </div>
+        <div class="name-chips">${chipsHtml}</div>
+      </div>
+    `;
+  }).join('');
+
+  roster.innerHTML = html;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+// ========== 학생 입장 화면 ==========
+function renderJoin(code) {
+  if (!window.__FIREBASE_CONFIGURED__) {
+    return `
+      <div class="config-warning">
+        <strong>⚠️ Firebase 설정 필요</strong><br/>
+        선생님이 Firebase 설정을 완료해야 학생 입장이 가능합니다.
+      </div>
+    `;
+  }
+  if (!code) {
+    return `
+      <span class="eyebrow">🎫 입장하기</span>
+      <h1 class="hero">세션 코드를<br/><span class="accent">입력해주세요</span></h1>
+      <p class="lede">선생님 화면에 보이는 6자리 숫자를 입력하거나 QR을 다시 스캔해주세요.</p>
+      <div class="join-card">
+        <input type="text" class="text-input" id="codeInput" placeholder="6자리 세션 코드" maxlength="6" inputmode="numeric" />
+      </div>
+      <div class="cta-row">
+        <button class="btn btn-primary btn-arrow" id="codeJoinBtn">입장</button>
+      </div>
+    `;
+  }
+
+  return `
+    <span class="eyebrow">🎫 학생 입장</span>
+    <h1 class="hero">이름을 적고<br/><span class="accent">함께 시작해요!</span> 👋</h1>
+    <p class="lede">반가워요! 이름을 적고 입장하면 친구들이 모두 모일 때까지 잠시 기다려요.</p>
+
+    <div class="join-card">
+      <div style="text-align:center; margin-bottom:8px;">
+        <span class="result-tag">세션 ${code}</span>
+      </div>
+      <div style="margin: 18px 0 8px; font-family:'Jua',sans-serif; font-size:14px; color:var(--ink-soft); text-align:center;">
+        내 이름
+      </div>
+      <input type="text" class="text-input" id="nameInput" placeholder="예: 홍길동" maxlength="12" autofocus />
+    </div>
+
+    <div class="cta-row">
+      <button class="btn btn-primary btn-arrow" id="joinBtn">입장하기</button>
+    </div>
+  `;
+}
+
+function bindJoin(code) {
+  if (!window.__FIREBASE_CONFIGURED__) return;
+  const { db, ref, get, push, set, onDisconnect } = window.__FB__;
+
+  if (!code) {
+    // 코드 입력 모드
+    const input = document.getElementById('codeInput');
+    const btn = document.getElementById('codeJoinBtn');
+    btn.addEventListener('click', () => {
+      const c = (input.value || '').trim();
+      if (!/^\d{6}$/.test(c)) {
+        showToast('6자리 숫자를 입력해주세요');
+        return;
+      }
+      navigate('join', { code: c });
+    });
+    input.addEventListener('keypress', e => { if (e.key === 'Enter') btn.click(); });
+    return;
+  }
+
+  // 이름 입력 → 입장
+  const nameInput = document.getElementById('nameInput');
+  const joinBtn = document.getElementById('joinBtn');
+
+  joinBtn.addEventListener('click', async () => {
+    const name = (nameInput.value || '').trim();
+    if (!name) {
+      showToast('이름을 적어주세요');
+      nameInput.focus();
+      return;
+    }
+    if (name.length > 12) {
+      showToast('이름은 12자 이내로 적어주세요');
+      return;
+    }
+
+    // 세션 존재 확인
+    const sessionSnap = await get(ref(db, `sessions/${code}`));
+    if (!sessionSnap.exists()) {
+      showToast('세션을 찾을 수 없어요. 코드를 확인해주세요');
+      return;
+    }
+    const session = sessionSnap.val();
+    if (session.status === 'closed') {
+      showToast('이미 종료된 세션이에요');
+      return;
+    }
+
+    // 학생 등록
+    joinBtn.disabled = true;
+    joinBtn.textContent = '입장 중...';
+
+    const studentsRef = ref(db, `sessions/${code}/students`);
+    const newRef = push(studentsRef);
+    await set(newRef, {
+      name,
+      joinedAt: Date.now()
+    });
+
+    // 연결이 끊기면 자동 제거 (선택적)
+    // onDisconnect(newRef).remove();
+    // → 새로고침/잠깐 끊김에도 사라져버려서 학생 입장에선 불편할 수 있어 비활성화
+
+    state.sessionCode = code;
+    state.myName = name;
+    state.myStudentId = newRef.key;
+
+    navigate('wait');
+  });
+
+  nameInput.addEventListener('keypress', e => { if (e.key === 'Enter') joinBtn.click(); });
+}
+
+// ========== 학생 대기 화면 ==========
+function renderWait() {
+  if (!state.sessionCode || !state.myStudentId) {
+    return `
+      <div class="config-warning">세션 정보가 없어요. 다시 입장해주세요.</div>
+      <div class="cta-row">
+        <button class="btn btn-primary" onclick="navigate('join')">다시 입장</button>
+      </div>
+    `;
+  }
+
+  return `
+    <span class="eyebrow">⏳ 친구들 기다리는 중</span>
+    <h1 class="hero">곧<br/><span class="accent">시작해요!</span> ✨</h1>
+
+    <div class="waiting-card">
+      <div style="font-size: 14px; color: var(--ink-soft); margin-bottom: 6px;">
+        <span class="pulse"></span> 입장 완료
+      </div>
+      <div class="my-name-tag">${escapeHtml(state.myName || '')}</div>
+
+      <div style="margin-top: 24px; font-family:'Jua',sans-serif; font-size: 36px; color: var(--ink);">
+        <span id="waitNow">0</span><span style="color: var(--ink-mute); margin: 0 6px;">/</span><span id="waitTotal">?</span>
+      </div>
+      <div style="font-size: 13px; color: var(--ink-soft); margin-top: 4px;">
+        명이 입장했어요
+      </div>
+
+      <div style="margin-top: 24px; max-width: 320px; margin-left:auto; margin-right:auto;">
+        <div class="progress" style="height:12px; background: var(--line); border-radius: 999px; border: 2px solid var(--ink); overflow: hidden;">
+          <div id="waitProgress" style="height:100%; width:0%; background: var(--grass); transition: width 0.4s;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-row">
+      <button class="btn btn-primary btn-arrow" id="checkRoleBtn" disabled>
+        🎭 잠시만 기다려요...
+      </button>
+    </div>
+  `;
+}
+
+function bindWait() {
+  if (!window.__FIREBASE_CONFIGURED__ || !state.sessionCode || !state.myStudentId) return;
+  const { db, ref, onValue } = window.__FB__;
+  const code = state.sessionCode;
+
+  const sessionRef = ref(db, `sessions/${code}`);
+
+  const unsub = onValue(sessionRef, (snap) => {
+    if (!snap.exists()) {
+      showToast('세션이 종료되었어요');
+      state.sessionCode = null;
+      state.myName = null;
+      state.myStudentId = null;
+      navigate('home');
+      return;
+    }
+    const session = snap.val();
+    const total = session.total || 0;
+    const students = session.students || {};
+    const joined = Object.keys(students).length;
+
+    const now = document.getElementById('waitNow');
+    const tot = document.getElementById('waitTotal');
+    const prog = document.getElementById('waitProgress');
+    const btn = document.getElementById('checkRoleBtn');
+
+    if (now) now.textContent = joined;
+    if (tot) tot.textContent = total;
+    if (prog) prog.style.width = Math.min(100, (joined / total) * 100) + '%';
+
+    if (btn) {
+      if (session.revealed) {
+        btn.disabled = false;
+        btn.textContent = '🎭 내 역할 확인하기';
+        btn.onclick = () => navigate('reveal');
+      } else if (joined >= total) {
+        // 모두 모였지만 선생님이 아직 공개 버튼을 안 누름
+        btn.disabled = true;
+        btn.textContent = '⏳ 선생님이 공개 준비 중...';
+      } else {
+        btn.disabled = true;
+        btn.textContent = `⏳ ${total - joined}명 더 기다리는 중...`;
+      }
+    }
+  });
+  state.unsubscribers.push(unsub);
+}
+
+// ========== 학생 역할 공개 화면 ==========
+function renderReveal() {
+  if (!state.sessionCode || !state.myStudentId) {
+    return `
+      <div class="config-warning">세션 정보가 없어요. 다시 입장해주세요.</div>
+      <div class="cta-row">
+        <button class="btn btn-primary" onclick="navigate('join')">다시 입장</button>
+      </div>
+    `;
+  }
+  return `
+    <span class="eyebrow">🎭 내 역할</span>
+    <h1 class="hero" style="text-align:center;">${escapeHtml(state.myName || '')}님,<br/><span class="accent">당신은...</span></h1>
+
+    <div id="roleRevealHost" style="margin: 20px 0;">
+      <div style="text-align:center; padding: 40px; color: var(--ink-mute);">불러오는 중...</div>
+    </div>
+
+    <div class="cta-row">
+      <button class="btn btn-ghost" onclick="navigate('home')">🏠 홈으로</button>
+    </div>
+  `;
+}
+
+function bindReveal() {
+  if (!window.__FIREBASE_CONFIGURED__ || !state.sessionCode || !state.myStudentId) return;
+  const { db, ref, onValue } = window.__FB__;
+  const code = state.sessionCode;
+  const sid = state.myStudentId;
+
+  const myRef = ref(db, `sessions/${code}/students/${sid}/role`);
+  const host = document.getElementById('roleRevealHost');
+
+  const unsub = onValue(myRef, (snap) => {
+    if (!snap.exists()) {
+      host.innerHTML = `
+        <div style="text-align:center; padding: 40px; color: var(--ink-mute);">
+          아직 역할이 배정되지 않았어요...
+        </div>
+      `;
+      return;
+    }
+    const role = snap.val();
+    host.innerHTML = `
+      <div class="role-reveal-card">
+        <div class="role-reveal-flag">${role.flag}</div>
+        <div class="role-reveal-name">${escapeHtml(role.name)}</div>
+        <div class="role-reveal-tag">자원 가져가는 순서 ${role.order}번</div>
+        <div class="role-reveal-desc">${escapeHtml(role.desc)}</div>
+        ${role.pct > 0
+          ? `<div class="role-reveal-pct">탄소 배출 ${role.pct}%</div>`
+          : `<div class="role-reveal-pct" style="color: var(--coral); border-color: var(--coral);">탄소 배출 거의 없음</div>`
+        }
+      </div>
+    `;
+  });
+  state.unsubscribers.push(unsub);
+}
+
+// 초기 진입은 firebase-ready 이벤트 또는 setTimeout fallback으로 처리됨
+</script>
+</body>
+</html>
