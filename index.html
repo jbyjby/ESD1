@@ -1,3 +1,8 @@
+선생님, 바로 복사해서 덮어씌우실 수 있도록 앞서 말씀드린 '랜덤 자리 배치' 로직을 모두 반영한 전체 코드를 완성해 왔습니다! 😆
+
+이제 학생들이 접속할 때마다 어디로 배정될지 모르는 쫄깃함을 느끼게 될 거예요! 기존 파일의 내용을 전부 지우고 아래 코드로 쏙 교체해 주세요.
+
+```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -1248,7 +1253,6 @@ input[type=range]::-moz-range-thumb {
   <main id="view"></main>
 </div>
 
-<!-- Firebase v10 (modular, CDN) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
@@ -1256,16 +1260,15 @@ input[type=range]::-moz-range-thumb {
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   // ⚠️ 여기를 본인 Firebase 프로젝트 설정값으로 교체하세요
-  // Firebase Console > 프로젝트 설정 > 일반 > 내 앱 > SDK 설정 및 구성
   const firebaseConfig = {
-  apiKey: "AIzaSyAPK56SwaqsNOi4dFONg5_v4nxI13Ddbjk",
-  authDomain: "esd1-ede22.firebaseapp.com",
-  databaseURL: "https://esd1-ede22-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "esd1-ede22",
-  storageBucket: "esd1-ede22.firebasestorage.app",
-  messagingSenderId: "219984118374",
-  appId: "1:219984118374:web:6c45c8421c2dbd02a3e3a7",
-  measurementId: "G-NYNLP4F5KY"
+    apiKey: "AIzaSyAPK56SwaqsNOi4dFONg5_v4nxI13Ddbjk",
+    authDomain: "esd1-ede22.firebaseapp.com",
+    databaseURL: "https://esd1-ede22-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "esd1-ede22",
+    storageBucket: "esd1-ede22.firebasestorage.app",
+    messagingSenderId: "219984118374",
+    appId: "1:219984118374:web:6c45c8421c2dbd02a3e3a7",
+    measurementId: "G-NYNLP4F5KY"
   };
 
   // Firebase 설정 여부 체크
@@ -1304,6 +1307,28 @@ let state = {
   myStudentId: null,    // 학생 본인 푸시 ID
   unsubscribers: []     // Firebase 리스너 정리용
 };
+
+// ========== 세션 코드 기반 난수 및 섞기 함수 ==========
+function getSeededRandom(seedStr) {
+  let h = 0xdeadbeef;
+  for(let i = 0; i < seedStr.length; i++)
+    h = Math.imul(h ^ seedStr.charCodeAt(i), 2654435761);
+  return function() {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h ^= h >>> 16) >>> 0) / 4294967296;
+  }
+}
+
+function getPermutation(n, seedStr) {
+  const rng = getSeededRandom(seedStr);
+  const arr = Array.from({length: n}, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 // ========== 라우팅 ==========
 function navigate(route, params = {}) {
@@ -1400,7 +1425,7 @@ function showToast(msg, ms=2000) {
   setTimeout(() => t.remove(), ms);
 }
 
-// ========== 홈/진행방법 (기존 그대로) ==========
+// ========== 홈/진행방법 ==========
 function renderHome() {
   return `
     <span class="eyebrow">🌱 환경교육 · 기후정의</span>
@@ -1755,8 +1780,6 @@ function renderLobby() {
 }
 
 function buildJoinUrl(code) {
-  // 현재 페이지 URL을 기준으로 join URL 생성
-  // 학생이 같은 HTML을 열고 #join?code=XXXXXX 로 들어오게 함
   const base = window.location.href.split('#')[0].split('?')[0];
   return `${base}#join?code=${code}`;
 }
@@ -1779,14 +1802,10 @@ function bindLobby() {
     correctLevel: QRCode.CorrectLevel.M
   });
 
-  // 세션 메타 + 학생 목록 실시간 구독
   const sessionRef = ref(db, `sessions/${code}`);
   const studentsRef = ref(db, `sessions/${code}/students`);
 
-  // 정적 배정 (allocate)으로 capacity 계산
   const alloc = allocate(total);
-  const capacityByOrder = {};
-  alloc.forEach(r => { capacityByOrder[r.order] = r.count; });
 
   const unsub = onValue(studentsRef, (snap) => {
     const students = snap.val() || {};
@@ -1797,7 +1816,6 @@ function bindLobby() {
   // 역할 공개 버튼
   const revealBtn = document.getElementById('revealBtn');
   revealBtn.addEventListener('click', async () => {
-    // 학생 데이터 가져와서 셔플 후 배정
     const { get } = window.__FB__;
     const snap = await get(studentsRef);
     const students = snap.val() || {};
@@ -1811,21 +1829,22 @@ function bindLobby() {
     const ordered = studentIds
       .map(id => ({ id, ...students[id] }))
       .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0))
-      .slice(0, total);  // 혹시 초과 입장 시 앞 N명만
+      .slice(0, total);
 
-    // 역할 풀(role pool) 만들기 — capacity대로 펼치고 셔플
+    // 💡 화면과 똑같은 로직으로 배정
+    const perm = getPermutation(total, code); // 화면과 동일한 규칙의 랜덤 배열
     const pool = [];
     alloc.forEach(r => {
       for (let k = 0; k < r.count; k++) {
         pool.push({ order: r.order, flag: r.flag, name: r.name, desc: r.desc, pct: r.pct });
       }
     });
-    shuffleInPlace(pool);
 
-    // 학생별 배정 결과
+    // 학생별 배정 결과 업데이트
     const updates = {};
     ordered.forEach((s, i) => {
-      const role = pool[i];
+      // i번째로 입장한 학생에게 화면과 동일하게 배정된 perm[i] 번째 역할을 줍니다
+      const role = pool[perm[i]];
       updates[`sessions/${code}/students/${s.id}/role`] = role;
     });
     updates[`sessions/${code}/revealed`] = true;
@@ -1843,13 +1862,6 @@ function bindLobby() {
     state.sessionCode = null;
     navigate('result');
   });
-}
-
-function shuffleInPlace(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
 }
 
 function renderRoster(students, alloc, total) {
@@ -1880,24 +1892,31 @@ function renderRoster(students, alloc, total) {
     }
   }
 
-  // 국가별로 학생 이름 채우기 (입장 순서로 슬롯에 채움)
-  // 단, 역할이 공개되기 전에는 어느 학생이 어느 국가인지 정해지지 않으므로
-  // "입장 순서 슬롯"으로만 보여주기 — 즉, 첫 번째 입장자는 상위 인기 국가의 첫 슬롯에...
-  // 사용자 요청: "국가별로 참여자들의 이름이 라벨링" → 입장 순서대로 위에서부터 빈 슬롯을 채우는 방식으로 시각화
-  // (실제 역할은 공개 시점에 셔플로 결정. 라벨링은 시각적 진행 표현용)
+  // 💡 세션 코드를 바탕으로 고정된 섞기 배열(0 ~ total-1) 생성
+  const perm = getPermutation(total, state.sessionCode);
+
+  // 총 슬롯 배열을 만들고, 입장한 학생들을 지정된 랜덤 인덱스에 넣습니다.
+  const slotAssignments = new Array(total).fill(null);
+  for(let i = 0; i < joinedCount; i++) {
+    if (i < total) {
+      slotAssignments[perm[i]] = ordered[i].name;
+    }
+  }
 
   let cursor = 0;
   const html = alloc.map(r => {
     const cap = r.count;
     const filled = [];
     for (let i = 0; i < cap; i++) {
-      if (cursor < ordered.length) {
-        filled.push({ name: ordered[cursor].name, filled: true });
-        cursor++;
+      const studentName = slotAssignments[cursor];
+      if (studentName) {
+        filled.push({ name: studentName, filled: true });
       } else {
         filled.push({ name: null, filled: false });
       }
+      cursor++;
     }
+    
     const allFull = filled.every(x => x.filled);
     const filledCount = filled.filter(x => x.filled).length;
     const chipsHtml = filled.map(x => {
@@ -1976,7 +1995,6 @@ function bindJoin(code) {
   const { db, ref, get, push, set, onDisconnect } = window.__FB__;
 
   if (!code) {
-    // 코드 입력 모드
     const input = document.getElementById('codeInput');
     const btn = document.getElementById('codeJoinBtn');
     btn.addEventListener('click', () => {
@@ -1991,7 +2009,6 @@ function bindJoin(code) {
     return;
   }
 
-  // 이름 입력 → 입장
   const nameInput = document.getElementById('nameInput');
   const joinBtn = document.getElementById('joinBtn');
 
@@ -2007,7 +2024,6 @@ function bindJoin(code) {
       return;
     }
 
-    // 세션 존재 확인
     const sessionSnap = await get(ref(db, `sessions/${code}`));
     if (!sessionSnap.exists()) {
       showToast('세션을 찾을 수 없어요. 코드를 확인해주세요');
@@ -2019,7 +2035,6 @@ function bindJoin(code) {
       return;
     }
 
-    // 학생 등록
     joinBtn.disabled = true;
     joinBtn.textContent = '입장 중...';
 
@@ -2029,10 +2044,6 @@ function bindJoin(code) {
       name,
       joinedAt: Date.now()
     });
-
-    // 연결이 끊기면 자동 제거 (선택적)
-    // onDisconnect(newRef).remove();
-    // → 새로고침/잠깐 끊김에도 사라져버려서 학생 입장에선 불편할 수 있어 비활성화
 
     state.sessionCode = code;
     state.myName = name;
@@ -2123,7 +2134,6 @@ function bindWait() {
         btn.textContent = '🎭 내 역할 확인하기';
         btn.onclick = () => navigate('reveal');
       } else if (joined >= total) {
-        // 모두 모였지만 선생님이 아직 공개 버튼을 안 누름
         btn.disabled = true;
         btn.textContent = '⏳ 선생님이 공개 준비 중...';
       } else {
@@ -2194,7 +2204,8 @@ function bindReveal() {
   state.unsubscribers.push(unsub);
 }
 
-// 초기 진입은 firebase-ready 이벤트 또는 setTimeout fallback으로 처리됨
 </script>
 </body>
 </html>
+
+```
