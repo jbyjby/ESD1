@@ -1478,7 +1478,7 @@ input[type=range]::-moz-range-thumb {
     getDatabase, ref, set, update, onValue, get, remove, push, onDisconnect, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  // ⚠️ 여기를 본인 Firebase 프로젝트 설정값으로 교체하세요
+  // ⚠️ 본인 Firebase 프로젝트 설정값
   const firebaseConfig = {
     apiKey: "AIzaSyAPK56SwaqsNOi4dFONg5_v4nxI13Ddbjk",
     authDomain: "esd1-ede22.firebaseapp.com",
@@ -1491,13 +1491,25 @@ input[type=range]::-moz-range-thumb {
   };
 
   // Firebase 설정 여부 체크
-  const isConfigured = !firebaseConfig.apiKey.startsWith("YOUR_");
+  const isConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("YOUR_");
   window.__FIREBASE_CONFIGURED__ = isConfigured;
 
+  // 로컬 파일 실행 경고 (학생 접속 불가)
+  const isLocalFile = window.location.protocol === 'file:';
+  if (isLocalFile) {
+    console.warn("⚠️ 현재 로컬 파일(file://)로 실행 중입니다. 이 경우 QR 코드를 통한 학생 접속이 불가능합니다. Netlify나 GitHub Pages 등을 통해 호스팅해주세요.");
+  }
+
   if (isConfigured) {
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    window.__FB__ = { db, ref, set, update, onValue, get, remove, push, onDisconnect, serverTimestamp };
+    try {
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      window.__FB__ = { db, ref, set, update, onValue, get, remove, push, onDisconnect, serverTimestamp };
+      console.log("✅ Firebase 연결 성공!");
+    } catch (e) {
+      console.error("❌ Firebase 초기화 에러:", e);
+      window.__FIREBASE_CONFIGURED__ = false;
+    }
   }
   // 로드 완료 알림
   window.dispatchEvent(new Event('firebase-ready'));
@@ -1642,6 +1654,26 @@ function showToast(msg, ms=2000) {
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), ms);
+}
+
+function copyJoinUrl() {
+  const url = buildJoinUrl(state.sessionCode);
+  // Fallback for non-secure contexts (like file://)
+  if (!navigator.clipboard) {
+    const el = document.createElement('textarea');
+    el.value = url;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast('링크가 복사되었습니다!');
+    return;
+  }
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('링크가 복사되었습니다!');
+  }).catch(() => {
+    showToast('복사에 실패했습니다. 수동으로 복사해주세요.');
+  });
 }
 
 // ========== 홈/진행방법 ==========
@@ -1962,11 +1994,18 @@ function renderLobby() {
   const code = state.sessionCode;
   const total = state.count;
   const joinUrl = buildJoinUrl(code);
+  const isLocal = window.location.protocol === 'file:';
 
   return `
     <div class="lobby-container">
       <div class="lobby-main">
         <div class="qr-card-compact">
+          ${isLocal ? `
+            <div class="config-warning" style="background:#fff0f0; border-color:#ff8b6a; margin-bottom:16px; padding:12px; font-size:12px;">
+              <strong>⚠️ 경고: 로컬 파일 실행 중</strong><br/>
+              현재 내 컴퓨터에서만 열린 상태입니다. 학생들이 QR로 접속하려면 반드시 <strong>Netlify</strong>나 <strong>GitHub Pages</strong>에 업로드해야 합니다.
+            </div>
+          ` : ''}
           <div class="qr-box" id="qrBox"></div>
           <div class="session-info">
             <div class="session-code-small">
@@ -1978,6 +2017,13 @@ function renderLobby() {
             </div>
           </div>
           <div class="progress-mini"><div id="progressBar" style="width:0%;"></div></div>
+          
+          <div class="join-link" id="joinLinkDisplay" style="margin-top:16px; font-size:10px; opacity:0.8;">
+            ${joinUrl}
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="copyJoinUrl()" style="margin-top:8px; width:100%; padding:8px;">
+            🔗 링크 복사하기
+          </button>
         </div>
 
         <div class="lobby-controls">
@@ -2012,6 +2058,10 @@ function bindLobby() {
   // QR 코드 생성
   const qrBox = document.getElementById('qrBox');
   qrBox.innerHTML = '';
+  if (typeof QRCode === 'undefined') {
+    qrBox.innerHTML = '<div style="font-size:12px; color:var(--coral); padding:20px; border:2px dashed var(--coral); border-radius:12px;">⚠️ QR 라이브러리 로드 실패<br/>인터넷 연결을 확인해주세요.</div>';
+    return;
+  }
   new QRCode(qrBox, {
     text: buildJoinUrl(code),
     width: 200,
