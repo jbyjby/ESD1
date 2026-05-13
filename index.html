@@ -1533,12 +1533,20 @@ const AFRICA = { order:11, flag:"🌍", iso:null, name:"아프리카인", weight
 const ALL_ROLES = [...COUNTRIES, AFRICA];
 
 let state = {
-  count: 23,
-  sessionCode: null,    // 6자리
-  myName: null,         // 학생 본인 이름
-  myStudentId: null,    // 학생 본인 푸시 ID
-  unsubscribers: []     // Firebase 리스너 정리용
+  count: parseInt(sessionStorage.getItem('esd_count') || '23'),
+  sessionCode: sessionStorage.getItem('esd_code'),
+  myName: sessionStorage.getItem('esd_name'),
+  myStudentId: sessionStorage.getItem('esd_sid'),
+  unsubscribers: []
 };
+
+function saveState(updates) {
+  Object.assign(state, updates);
+  if (updates.sessionCode !== undefined) sessionStorage.setItem('esd_code', updates.sessionCode || '');
+  if (updates.myName !== undefined) sessionStorage.setItem('esd_name', updates.myName || '');
+  if (updates.myStudentId !== undefined) sessionStorage.setItem('esd_sid', updates.myStudentId || '');
+  if (updates.count !== undefined) sessionStorage.setItem('esd_count', updates.count || '23');
+}
 
 // ========== 세션 코드 기반 난수 및 섞기 함수 ==========
 function getSeededRandom(seedStr) {
@@ -1569,6 +1577,8 @@ function navigate(route, params = {}) {
   if (params.code) q.set('code', params.code);
   if ([...q].length) hash += '?' + q.toString();
   window.location.hash = hash;
+  // 해시 변경이 즉시 반영되지 않을 수 있으므로 명시적으로 render 호출
+  render();
 }
 
 function getRoute() {
@@ -1587,6 +1597,9 @@ window.addEventListener('hashchange', render);
 let __initialized = false;
 function initialRoute() {
   if (__initialized) return;
+  // Firebase가 설정되어 있다면 준비될 때까지 대기
+  if (window.__FIREBASE_CONFIGURED__ && !window.__FB__) return;
+  
   __initialized = true;
   if (!window.location.hash) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -1606,6 +1619,14 @@ window.addEventListener('firebase-ready', initialRoute);
 setTimeout(() => {
   if (!__initialized) initialRoute();
 }, 200);
+// 200ms 후에도 초기화가 안 되었고 Firebase가 아직이라면 재시도 루프
+const retryInit = setInterval(() => {
+  if (__initialized) {
+    clearInterval(retryInit);
+  } else {
+    initialRoute();
+  }
+}, 500);
 
 function render() {
   // 기존 리스너 정리
@@ -1810,7 +1831,7 @@ function bindPlay() {
 
   function update(v) {
     v = Math.max(10, Math.min(30, parseInt(v)));
-    state.count = v;
+    saveState({ count: v });
     range.value = v;
     numText.textContent = v;
     dec.disabled = v <= 10;
@@ -1976,7 +1997,7 @@ async function startSession() {
     revealed: false
   });
 
-  state.sessionCode = code;
+  saveState({ sessionCode: code });
   navigate('lobby');
 }
 
@@ -2051,7 +2072,7 @@ function buildJoinUrl(code) {
 }
 
 function bindLobby() {
-  if (!state.sessionCode || !window.__FIREBASE_CONFIGURED__) return;
+  if (!state.sessionCode || !window.__FIREBASE_CONFIGURED__ || !window.__FB__) return;
   const code = state.sessionCode;
   const total = state.count;
   const { db, ref, onValue, update, set } = window.__FB__;
@@ -2131,7 +2152,7 @@ function bindLobby() {
   document.getElementById('endSessionBtn').addEventListener('click', async () => {
     if (!confirm('세션을 종료할까요? 학생들도 모두 처음 화면으로 돌아갑니다.')) return;
     await set(sessionRef, null);
-    state.sessionCode = null;
+    saveState({ sessionCode: null, myName: null, myStudentId: null });
     navigate('result');
   });
 }
@@ -2311,32 +2332,46 @@ function bindJoin(code) {
       return;
     }
 
-    const sessionSnap = await get(ref(db, `sessions/${code}`));
-    if (!sessionSnap.exists()) {
-      showToast('세션을 찾을 수 없어요. 코드를 확인해주세요');
-      return;
-    }
-    const session = sessionSnap.val();
-    if (session.status === 'closed') {
-      showToast('이미 종료된 세션이에요');
-      return;
-    }
-
+    // 클릭 즉시 피드백
     joinBtn.disabled = true;
     joinBtn.textContent = '입장 중...';
 
-    const studentsRef = ref(db, `sessions/${code}/students`);
-    const newRef = push(studentsRef);
-    await set(newRef, {
-      name,
-      joinedAt: Date.now()
-    });
+    try {
+      const sessionSnap = await get(ref(db, `sessions/${code}`));
+      if (!sessionSnap.exists()) {
+        showToast('세션을 찾을 수 없어요. 코드를 확인해주세요');
+        joinBtn.disabled = false;
+        joinBtn.textContent = '입장하기';
+        return;
+      }
+      const session = sessionSnap.val();
+      if (session.status === 'closed') {
+        showToast('이미 종료된 세션이에요');
+        joinBtn.disabled = false;
+        joinBtn.textContent = '입장하기';
+        return;
+      }
 
-    state.sessionCode = code;
-    state.myName = name;
-    state.myStudentId = newRef.key;
+      const studentsRef = ref(db, `sessions/${code}/students`);
+      const newRef = push(studentsRef);
+      await set(newRef, {
+        name,
+        joinedAt: Date.now()
+      });
 
-    navigate('wait');
+      saveState({
+        sessionCode: code,
+        myName: name,
+        myStudentId: newRef.key
+      });
+
+      navigate('wait');
+    } catch (e) {
+      console.error("입장 에러:", e);
+      showToast('입장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      joinBtn.disabled = false;
+      joinBtn.textContent = '입장하기';
+    }
   });
 
   nameInput.addEventListener('keypress', e => { if (e.key === 'Enter') joinBtn.click(); });
@@ -2386,7 +2421,7 @@ function renderWait() {
 }
 
 function bindWait() {
-  if (!window.__FIREBASE_CONFIGURED__ || !state.sessionCode || !state.myStudentId) return;
+  if (!window.__FIREBASE_CONFIGURED__ || !window.__FB__ || !state.sessionCode || !state.myStudentId) return;
   const { db, ref, onValue } = window.__FB__;
   const code = state.sessionCode;
 
@@ -2395,9 +2430,7 @@ function bindWait() {
   const unsub = onValue(sessionRef, (snap) => {
     if (!snap.exists()) {
       showToast('세션이 종료되었어요');
-      state.sessionCode = null;
-      state.myName = null;
-      state.myStudentId = null;
+      saveState({ sessionCode: null, myName: null, myStudentId: null });
       navigate('home');
       return;
     }
@@ -2457,7 +2490,7 @@ function renderReveal() {
 }
 
 function bindReveal() {
-  if (!window.__FIREBASE_CONFIGURED__ || !state.sessionCode || !state.myStudentId) return;
+  if (!window.__FIREBASE_CONFIGURED__ || !window.__FB__ || !state.sessionCode || !state.myStudentId) return;
   const { db, ref, onValue } = window.__FB__;
   const code = state.sessionCode;
   const sid = state.myStudentId;
